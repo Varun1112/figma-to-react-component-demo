@@ -1,0 +1,36 @@
+{
+  "fileId": "FIGMA_FILE_123",
+  "nodeId": "BUTTON_PRIMARY_001",
+  "name": "Button / Primary",
+  "type": "COMPONENT",
+  "layout": {
+    "type": "AUTO_LAYOUT",
+    "direction": "HORIZONTAL",
+    "gap": 8,
+    "padding": {
+      "top": 8,
+      "bottom": 8,
+      "left": 16,
+      "right": 16
+    },
+    "alignment": "CENTER"
+  },
+  "children": [
+    {
+      "id": "TEXT_1",
+      "type": "TEXT",
+      "name": "Label",
+      "style": {
+        "textStyle": "Button/Label"
+      }
+    }
+  ],
+  "styles": {
+    "fills": "Primary/Brand",
+    "text": "Button/Label",
+    "borderRadius": 4
+  },
+  "variants": {
+    "type": ["primary"]
+  }
+}

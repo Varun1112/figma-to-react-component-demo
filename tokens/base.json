@@ -1,0 +1,7 @@
+{
+  "button": {
+    "background": "var(--color-primary)",
+    "textColor": "var(--color-on-primary)",
+    "borderRadius": "4px"
+  }
+}

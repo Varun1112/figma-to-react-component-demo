@@ -1,0 +1,30 @@
+{
+  "name": "ai-figma-component-generator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-assisted pipeline to generate brand-aware React components from Figma using design tokens",
+  "scripts": {
+    "dev": "ts-node scripts/run-agent1.ts",
+    "agent2": "ts-node scripts/run-agent2.ts",
+    "agent1": "ts-node scripts/run-agent1.ts",
+    "build": "tsc --noEmit",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@google/genai": "^1.41.0",
+    "dotenv": "^17.3.1",
+    "react": "^19.2.4",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@babel/parser": "^7.29.0",
+    "@types/node": "^20.11.30",
+    "@types/react": "^19.2.14",
+    "@typescript-eslint/parser": "^8.55.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

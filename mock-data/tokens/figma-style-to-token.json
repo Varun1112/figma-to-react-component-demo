@@ -1,0 +1,5 @@
+{
+  "Primary/Brand": "button.background",
+  "Button/Label": "button.textColor",
+  "borderRadius": "button.borderRadius"
+}
