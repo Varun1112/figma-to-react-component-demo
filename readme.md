@@ -86,4 +86,13 @@ Gemini analyzes component structure and outputs:
     "button.borderRadius"
   ]
 }
+```
+
+## Steps to run the App
+    1. Run npm install
+    2. setup .env file with GEMINI_API_KEY= Your API Key
+    3.npm run agent1
+    4.npm run agent2
+
+    Output will be a button react component
 
