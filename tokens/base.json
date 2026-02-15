@@ -1,7 +1,14 @@
 {
   "button": {
     "background": "var(--color-primary)",
+    "backgroundHover": "var(--color-primary-hover)",
     "textColor": "var(--color-on-primary)",
-    "borderRadius": "4px"
+    "borderRadius": "4px",
+    "paddingInline": "16px",
+    "paddingBlock": "8px",
+    "fontSize": "14px",
+    "fontWeight": "600",
+    "borderWidth": "0px"
   }
 }
+

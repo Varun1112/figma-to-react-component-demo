@@ -1,6 +1,10 @@
 import fs from "fs"
 import { parse } from "@babel/parser"
 
+/* ========================================================= */
+/*                  MAIN VALIDATION ENTRY                    */
+/* ========================================================= */
+
 export function validateGeneratedComponent(
   filePath: string,
   schema: any
@@ -12,75 +16,192 @@ export function validateGeneratedComponent(
     plugins: ["typescript", "jsx"]
   })
 
-  validateImports(ast.program.body)
-  validateTokenUsage(ast, schema)
-  validateNoHardcodedStyles(ast)
-}
+  const componentName = schema.component
+  const namespace = componentName.toLowerCase()
 
-function validateImports(body: any[]) {
-  const allowedImports = ["react", "../tokens/provider"]
-
-  body.forEach(node => {
-    if (node.type === "ImportDeclaration") {
-      const importPath = node.source.value
-      if (!allowedImports.includes(importPath)) {
-        throw new Error(
-          `❌ Disallowed import detected: ${importPath}`
-        )
-      }
-    }
-  })
-}
-
-function validateTokenUsage(ast: any, schema: any) {
   const allowedTokens = schema.tokensUsed.map((t: string) =>
     t.split(".")[1]
   )
 
-  traverse(ast, node => {
+  let useTokensCount = 0
+  let namedExportFound = false
+
+  traverse(ast, (node: any, parent: any) => {
+    /* ---------------------------------- */
+    /* 1. Import Enforcement              */
+    /* ---------------------------------- */
+    if (node.type === "ImportDeclaration") {
+      const allowedImports = ["react", "../tokens/provider"]
+
+      if (!allowedImports.includes(node.source.value)) {
+        throw new Error(
+          `❌ Disallowed import: ${node.source.value}`
+        )
+      }
+    }
+
+    /* ---------------------------------- */
+    /* 2. No Default Export               */
+    /* ---------------------------------- */
+    if (node.type === "ExportDefaultDeclaration") {
+      throw new Error("❌ Default export not allowed")
+    }
+
+    /* ---------------------------------- */
+    /* 3. Named Export Must Match Schema  */
+    /* ---------------------------------- */
+    if (
+      node.type === "ExportNamedDeclaration" &&
+      node.declaration?.id?.name === componentName
+    ) {
+      namedExportFound = true
+    }
+
+    /* ---------------------------------- */
+    /* 4. useTokens Enforcement           */
+    /* ---------------------------------- */
+    if (
+      node.type === "CallExpression" &&
+      node.callee?.name === "useTokens"
+    ) {
+      useTokensCount++
+
+      const arg = node.arguments[0]?.value
+
+      if (arg !== namespace) {
+        throw new Error(
+          `❌ useTokens namespace must be "${namespace}"`
+        )
+      }
+    }
+
+    if (useTokensCount > 1) {
+      throw new Error("❌ Multiple useTokens() calls not allowed")
+    }
+
+    /* ---------------------------------- */
+    /* 5. No Bracket Token Access         */
+    /* ---------------------------------- */
+    if (
+      node.type === "MemberExpression" &&
+      node.computed === true
+    ) {
+      throw new Error("❌ Bracket token access not allowed")
+    }
+
+    /* ---------------------------------- */
+    /* 6. Validate Token Usage            */
+    /* ---------------------------------- */
     if (
       node.type === "MemberExpression" &&
       node.object?.name === "tokens"
     ) {
       const tokenName = node.property?.name
+
       if (!allowedTokens.includes(tokenName)) {
         throw new Error(
-          `❌ Invalid token used: ${tokenName}`
+          `❌ Unauthorized token usage: ${tokenName}`
         )
       }
     }
-  })
-}
 
-function validateNoHardcodedStyles(ast: any) {
-  traverse(ast, node => {
+    /* ---------------------------------- */
+    /* 7. Context-Aware Style Literal Ban */
+    /* ---------------------------------- */
     if (
-      node.type === "StringLiteral" &&
-      (node.value.includes("#") ||
-        node.value.includes("px") ||
-        node.value.includes("rgb"))
+      node.type === "ObjectProperty" &&
+      isInsideJSXStyle(parent)
     ) {
-      throw new Error(
-        `❌ Hardcoded style detected: ${node.value}`
-      )
+      const value = node.value
+
+      if (
+        value?.type === "StringLiteral" ||
+        value?.type === "NumericLiteral"
+      ) {
+        throw new Error(
+          `❌ Hardcoded style detected: ${value.value}`
+        )
+      }
+    }
+
+    /* ---------------------------------- */
+    /* 8. No console usage                */
+    /* ---------------------------------- */
+    if (
+      node.type === "MemberExpression" &&
+      node.object?.name === "console"
+    ) {
+      throw new Error("❌ console usage not allowed")
+    }
+
+    /* ---------------------------------- */
+    /* 9. No Async Components             */
+    /* ---------------------------------- */
+    if (
+      node.type === "FunctionDeclaration" &&
+      node.async === true
+    ) {
+      throw new Error("❌ Async components not allowed")
     }
   })
+
+  /* ---------------------------------- */
+  /* Final Structural Checks            */
+  /* ---------------------------------- */
+
+  if (useTokensCount === 0) {
+    throw new Error("❌ useTokens() must be called exactly once")
+  }
+
+  if (!namedExportFound) {
+    throw new Error(
+      `❌ Named export "${componentName}" not found`
+    )
+  }
 }
 
-function traverse(node: any, visitor: (node: any) => void) {
-  visitor(node)
+/* ========================================================= */
+/*                     SAFE AST TRAVERSAL                    */
+/* ========================================================= */
+
+function traverse(
+  node: any,
+  visitor: (node: any, parent: any) => void,
+  parent: any = null
+) {
+  visitor(node, parent)
 
   for (const key in node) {
+    if (
+      key === "loc" ||
+      key === "start" ||
+      key === "end"
+    )
+      continue
+
     const value = node[key]
 
     if (Array.isArray(value)) {
       value.forEach(child => {
         if (child && typeof child === "object") {
-          traverse(child, visitor)
+          traverse(child, visitor, node)
         }
       })
     } else if (value && typeof value === "object") {
-      traverse(value, visitor)
+      traverse(value, visitor, node)
     }
   }
+}
+
+/* ========================================================= */
+/*            CONTEXT CHECK: style={{ ... }}                 */
+/* ========================================================= */
+
+function isInsideJSXStyle(parent: any): boolean {
+  if (!parent) return false
+
+  return (
+    parent.type === "JSXAttribute" &&
+    parent.name?.name === "style"
+  )
 }

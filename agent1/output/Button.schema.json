@@ -1,0 +1,14 @@
+{
+  "component": "Button",
+  "slots": [
+    "label"
+  ],
+  "variants": [
+    "primary"
+  ],
+  "tokensUsed": [
+    "button.background",
+    "button.textColor",
+    "button.borderRadius"
+  ]
+}

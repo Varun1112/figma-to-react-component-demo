@@ -2,10 +2,10 @@ import fs from "fs"
 import path from "path"
 import { buildAgent2Prompt } from "./prompt";
 import { validateGeneratedComponent } from "../validators/astValidator"
-import { callGemini } from "../lib/gemini"
+import { askGemini } from "../lib/gemini"
 
 async function callLLM(prompt: string): Promise<string> {
-  return callGemini(prompt)
+  return  await askGemini(prompt).then(value => value)
 }
 
 

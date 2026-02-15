@@ -2,10 +2,10 @@ import fs from "fs"
 import path from "path"
 import { buildAgent1Prompt } from "./prompt"
 import { ComponentSchemaZod } from "./schema"
-import { callGemini } from "../lib/gemini"
+import { askGemini } from "../lib/gemini"
 
 async function callLLM(prompt: string): Promise<string> {
-  return callGemini(prompt)
+  return  await askGemini(prompt).then(value => value)
 }
 
 export async function runAgent1(componentData: any) {
@@ -20,15 +20,23 @@ export async function runAgent1(componentData: any) {
   })
 
   // 4️⃣ Call LLM
-  const rawResponse = await callLLM(prompt)
+ let raw = await callLLM(prompt)
 
-  // 5️⃣ Parse + validate schema
-  let parsed
-  try {
-    parsed = JSON.parse(rawResponse)
-  } catch {
-    throw new Error("❌ Agent1 returned invalid JSON")
-  }
+// Remove markdown code fences if present
+raw = raw
+  .replace(/```json/g, "")
+  .replace(/```/g, "")
+  .trim()
+
+let parsed
+
+try {
+  parsed = JSON.parse(raw)
+} catch (err) {
+  console.error("Raw Gemini response:\n", raw)
+  throw new Error("❌ Agent1 returned invalid JSON")
+}
+
 
   const schema = ComponentSchemaZod.parse(parsed)
 
